@@ -15,7 +15,18 @@ from utils import read_split_data, train_one_epoch, evaluate
 
 
 def main(args):
-    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print("Using GPU:", torch.cuda.get_device_name(0))
+    # 检查是否有 macOS 的 MPS 支持
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Using macOS MPS (Metal Performance Shaders)")
+    # 默认使用 CPU
+    else:
+        device = torch.device("cpu")
+        print("Using CPU")
+
 
     if os.path.exists("./weights") is False:
         os.makedirs("./weights")
@@ -84,7 +95,7 @@ def main(args):
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-5)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
-    lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
+    lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine  # noqa: E731
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     for epoch in range(args.epochs):
@@ -123,17 +134,34 @@ if __name__ == '__main__':
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
-    parser.add_argument('--data-path', type=str,
-                        default="/data/flower_photos")
-    parser.add_argument('--model-name', default='', help='create model name')
 
-    # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='./vit_base_patch16_224_in21k.pth',
-                        help='initial weights path')
-    # 是否冻结权重
-    parser.add_argument('--freeze-layers', type=bool, default=True)
-    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+    if torch.backends.mps.is_available():
+        #mac
+        parser.add_argument('--data-path', type=str,
+                            default="/Users/wenxuanzhang/Desktop/code/dataset/flower_photos")
+        parser.add_argument('--model-name', default='', help='create model name')
 
-    opt = parser.parse_args()
+        # 预训练权重路径，如果不想载入就设置为空字符
+        parser.add_argument('--weights', type=str, default='/Users/wenxuanzhang/Desktop/code/my_code/vision_transformer/jx_vit_base_patch16_224_in21k-e5005f0a.pth',
+                            help='initial weights path')
+        # 是否冻结权重
+        parser.add_argument('--freeze-layers', type=bool, default=True)
+        parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+
+        opt = parser.parse_args()
+    elif torch.cuda.is_available():
+        #colab
+        parser.add_argument('--data-path', type=str,
+                            default="content/data/flower_photos")
+        parser.add_argument('--model-name', default='', help='create model name')
+
+        # 预训练权重路径，如果不想载入就设置为空字符
+        parser.add_argument('--weights', type=str, default='content/home/saved_models/vit_base_patch16_224_in21k.pth',
+                            help='initial weights path')
+        # 是否冻结权重
+        parser.add_argument('--freeze-layers', type=bool, default=True)
+        parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+
+        opt = parser.parse_args()
 
     main(opt)
