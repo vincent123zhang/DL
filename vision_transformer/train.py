@@ -152,11 +152,11 @@ if __name__ == '__main__':
     elif torch.cuda.is_available():
         #colab
         parser.add_argument('--data-path', type=str,
-                            default="content/data/flower_photos")
+                            default="/content/data/flower_photos")
         parser.add_argument('--model-name', default='', help='create model name')
 
         # 预训练权重路径，如果不想载入就设置为空字符
-        parser.add_argument('--weights', type=str, default='content/home/saved_models/vit_base_patch16_224_in21k.pth',
+        parser.add_argument('--weights', type=str, default='/content/home/saved_models/vit_base_patch16_224_in21k.pth',
                             help='initial weights path')
         # 是否冻结权重
         parser.add_argument('--freeze-layers', type=bool, default=True)
